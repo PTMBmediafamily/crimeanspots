@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Споты Крыма</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-color-markers/dist/css/leaflet-color-markers.css" />
+    <style>
+        /* Убираем отступы у body и html */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%; /* Высота html и body на 100% */
+            width: 100%; /* Ширина html и body на 100% */
+            font-family: Arial, sans-serif; /* Шрифт для текста */
+        }
+        /* Контейнер для карты и боковой панели */
+        .container {
+            display: flex;
+            height: calc(100vh - 80px); /* Высота контейнера минус высота заголовка */
+        }
+        /* Боковая панель */
+        .sidebar {
+            width: 300px; /* Ширина боковой панели */
+            background-color: #f0f0f0; /* Светлый фон */
+            padding: 10px;
+            overflow-y: auto; /* Добавляем прокрутку, если содержимое не помещается */
+            border-right: 1px solid #ccc; /* Граница справа */
+        }
+        .sidebar h2 {
+            font-size: 18px;
+            margin: 0 0 10px;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar ul li {
+            margin: 5px 0;
+            cursor: pointer; /* Курсор в виде указателя */
+        }
+        .sidebar ul li:hover {
+            text-decoration: underline; /* Подчеркивание при наведении */
+        }
+        /* Заголовок */
+        .header {
+            text-align: left; /* Центрируем текст */
+            padding: 10px; /* Отступы вокруг заголовка */
+            background-color: #f0f0f0; /* Светлый фон */
+            border-bottom: 1px solid #ccc; /* Граница снизу */
+        }
+        .header h1 {
+            font-size: 24px; /* Крупный шрифт для первой строки */
+            margin: 0; /* Убираем отступы */
+        }
+        .header p {
+            font-size: 16px; /* Меньший шрифт для второй строки */
+            margin: 5px 0 0; /* Отступы */
+        }
+        .header a {
+            color: #0077cc; /* Цвет ссылки */
+            text-decoration: none; /* Убираем подчеркивание */
+        }
+        .header a:hover {
+            text-decoration: underline; /* Подчеркивание при наведении */
+        }
+        /* Карта */
+        #map {
+            flex: 1; /* Карта занимает оставшееся пространство */
+            height: 100%;
+        }
+        .popup-image {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Уменьшение размера маркеров */
+        .leaflet-marker-icon {
+            width: 25px !important;
+            height: 41px !important;
+            margin-left: -12px !important;
+            margin-top: -41px !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Заголовок -->
+    <div class="header">
+        <h1>Карта спотов Крыма</h1>
+        <p>Для добавления своего спота посетите <a href="https://vk.com/crimeanspots" target="_blank">вк паблик</a></p>
+    </div>
+
+    <!-- Контейнер для боковой панели и карты -->
+    <div class="container">
+        <!-- Боковая панель -->
+        <div class="sidebar">
+            <h2>Скейтпарки</h2>
+            <ul id="green-markers-list"></ul>
+
+            <h2>Стрит споты</h2>
+            <ul id="blue-markers-list"></ul>
+
+            <h2>Памп-треки</h2>
+            <ul id="yellow-markers-list"></ul>
+        </div>
+
+        <!-- Карта -->
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-color-markers/dist/leaflet-color-markers.js"></script>
+    <script>
+        // Инициализация карты с центром на Крыме
+        const map = L.map('map').setView([45.0445, 34.6023], 9); // Центр на Крыме, уровень масштаба 9
+
+        // Добавление слоя карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Пример данных для отметок в Крыму
+        const blueMarkers = [
+            { coords: [44.4951, 34.1663], title: "Алушта", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." },
+            { coords: [45.0360, 35.3830], title: "Керчь", image: "https://example.com/kerch.jpg", description: "Керчь — город с богатой историей." },
+            { coords: [44.6104, 33.4880], title: "Балаклава", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." },
+            { coords: [44.6764, 34.4100], title: "Ялта", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." },
+            { coords: [44.4951, 34.1663], title: "Алушта 2", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак 2", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." },
+            { coords: [45.0360, 35.3830], title: "Керчь 2", image: "https://example.com/kerch.jpg", description: "Керчь — город с богатой историей." },
+            { coords: [44.6104, 33.4880], title: "Балаклава 2", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." },
+            { coords: [44.6764, 34.4100], title: "Ялта 2", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос 2", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь 2", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория 2", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф 2", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита 2", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." }
+        ];
+
+        const greenMarkers = [
+            { coords: [44.4187, 33.9976], title: "Севастополь", image: "https://sun10-2.userapi.com/impg/Kwv6oqCwZVF9cBJf6MysCY0pYgKX_qJ7WskT9w/RTsibliwlYU.jpg?size=1620x2160&quality=95&sign=cd67fc5566f9bc6ba374af4fa56b433f&type=album", description: "Севастополь — город-герой." },
+            { coords: [44.6104, 33.4880], title: "Балаклава", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." },
+            { coords: [44.6764, 34.4100], title: "Ялта", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." },
+            { coords: [44.4951, 34.1663], title: "Алушта", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." },
+            { coords: [44.4187, 33.9976], title: "Севастополь 2", image: "https://example.com/sevastopol.jpg", description: "Севастополь — город-герой." },
+            { coords: [44.6104, 33.4880], title: "Балаклава 2", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." },
+            { coords: [44.6764, 34.4100], title: "Ялта 2", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос 2", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь 2", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория 2", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф 2", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита 2", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." },
+            { coords: [44.4951, 34.1663], title: "Алушта 2", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак 2", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." }
+        ];
+
+        const yellowMarkers = [
+            { coords: [44.6764, 34.4100], title: "Ялта", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." },
+            { coords: [44.4951, 34.1663], title: "Алушта", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." },
+            { coords: [45.0360, 35.3830], title: "Керчь", image: "https://example.com/kerch.jpg", description: "Керчь — город с богатой историей." },
+            { coords: [44.6104, 33.4880], title: "Балаклава", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." },
+            { coords: [44.6764, 34.4100], title: "Ялта 2", image: "https://example.com/yalta.jpg", description: "Ялта — известный курорт." },
+            { coords: [44.4300, 34.0870], title: "Форос 2", image: "https://example.com/foros.jpg", description: "Форос — курортный поселок." },
+            { coords: [44.7466, 34.6775], title: "Симферополь 2", image: "https://example.com/simferopol.jpg", description: "Симферополь — столица Крыма." },
+            { coords: [45.1900, 33.3667], title: "Евпатория 2", image: "https://example.com/evpatoria.jpg", description: "Евпатория — курортный город." },
+            { coords: [44.5633, 34.2888], title: "Гурзуф 2", image: "https://example.com/gurzuf.jpg", description: "Гурзуф — живописный поселок." },
+            { coords: [44.5775, 34.4017], title: "Никита 2", image: "https://example.com/nikita.jpg", description: "Никита — известен ботаническим садом." },
+            { coords: [44.4951, 34.1663], title: "Алушта 2", image: "https://example.com/alushta.jpg", description: "Алушта — популярный курортный город." },
+            { coords: [44.9521, 34.1024], title: "Судак 2", image: "https://example.com/sudak.jpg", description: "Судак — известен Генуэзской крепостью." },
+            { coords: [45.0360, 35.3830], title: "Керчь 2", image: "https://example.com/kerch.jpg", description: "Керчь — город с богатой историей." },
+            { coords: [44.6104, 33.4880], title: "Балаклава 2", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." }
+        ];
+
+        // Функция для добавления маркеров на карту и в боковую панель
+        function addMarkers(markers, color, listId) {
+            const list = document.getElementById(listId);
+            markers.forEach(marker => {
+                // Добавление маркера на карту
+                const leafletMarker = L.marker(marker.coords, {
+                    icon: L.icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+                        iconSize: [25, 41], // Уменьшенный размер
+                        iconAnchor: [12, 41]
+                    })
+                })
+                .addTo(map)
+                .bindPopup(`
+                    <h2>${marker.title}</h2>
+                    <img src="${marker.image}" alt="${marker.title}" class="popup-image">
+                    <p>${marker.description}</p>
+                `);
+
+                // Добавление элемента в боковую панель
+                const listItem = document.createElement('li');
+                listItem.textContent = marker.title;
+                listItem.addEventListener('click', () => {
+                    map.setView(marker.coords, 13); // Центрирование карты на маркере
+                    leafletMarker.openPopup(); // Открытие всплывающего окна
+                });
+                list.appendChild(listItem);
+            });
+        }
+
+        // Добавление синих маркеров
+        addMarkers(blueMarkers, 'blue', 'blue-markers-list');
+
+        // Добавление зеленых маркеров
+        addMarkers(greenMarkers, 'green', 'green-markers-list');
+
+        // Добавление желтых маркеров
+        addMarkers(yellowMarkers, 'gold', 'yellow-markers-list');
+
+        // Автоматическое обновление размеров карты при изменении размера окна
+        window.addEventListener('resize', () => {
+            map.invalidateSize();
+        });
+    </script>
+</body>
+</html>
