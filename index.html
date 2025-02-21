@@ -28,6 +28,7 @@
             padding: 10px;
             overflow-y: auto; /* Добавляем прокрутку, если содержимое не помещается */
             border-bottom: 1px solid #ccc; /* Граница снизу */
+            max-height: 40vh; /* Ограничиваем высоту боковой панели на мобильных устройствах */
         }
         .sidebar h2 {
             font-size: 18px;
@@ -100,6 +101,7 @@
             }
             .sidebar {
                 width: 300px; /* Фиксированная ширина боковой панели */
+                max-height: none; /* Убираем ограничение высоты */
                 border-right: 1px solid #ccc; /* Граница справа */
                 border-bottom: none; /* Убираем границу снизу */
             }
