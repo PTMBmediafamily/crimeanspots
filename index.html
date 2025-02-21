@@ -18,8 +18,8 @@
         /* Контейнер для карты и боковой панели */
         .container {
             display: flex;
-            height: calc(100vh - 80px); /* Высота контейнера минус высота заголовка */
             flex-direction: column; /* По умолчанию для мобильных устройств */
+            height: calc(100vh - 80px); /* Высота контейнера минус высота заголовка */
         }
         /* Боковая панель */
         .sidebar {
@@ -102,6 +102,9 @@
                 width: 300px; /* Фиксированная ширина боковой панели */
                 border-right: 1px solid #ccc; /* Граница справа */
                 border-bottom: none; /* Убираем границу снизу */
+            }
+            #map {
+                flex: 1; /* Карта занимает оставшееся пространство */
             }
         }
     </style>
@@ -232,7 +235,7 @@
                 const leafletMarker = L.marker(markerData.coords, {
                     icon: L.icon({
                         iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                        iconSize: [12, 20], // Уменьшенный размер
+                        iconSize: [25, 41], // Уменьшенный размер
                         iconAnchor: [12, 41]
                     })
                 })
