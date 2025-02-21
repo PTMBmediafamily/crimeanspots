@@ -19,14 +19,15 @@
         .container {
             display: flex;
             height: calc(100vh - 80px); /* Высота контейнера минус высота заголовка */
+            flex-direction: column; /* По умолчанию для мобильных устройств */
         }
         /* Боковая панель */
         .sidebar {
-            width: 300px; /* Ширина боковой панели */
+            width: 100%; /* На мобильных устройствах занимает всю ширину */
             background-color: #f0f0f0; /* Светлый фон */
             padding: 10px;
             overflow-y: auto; /* Добавляем прокрутку, если содержимое не помещается */
-            border-right: 1px solid #ccc; /* Граница справа */
+            border-bottom: 1px solid #ccc; /* Граница снизу */
         }
         .sidebar h2 {
             font-size: 18px;
@@ -43,6 +44,16 @@
         }
         .sidebar ul li:hover {
             text-decoration: underline; /* Подчеркивание при наведении */
+        }
+        /* Кнопки для включения/выключения маркеров */
+        .toggle-buttons {
+            margin-bottom: 10px;
+        }
+        .toggle-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
         }
         /* Заголовок */
         .header {
@@ -82,6 +93,17 @@
             margin-left: -12px !important;
             margin-top: -41px !important;
         }
+        /* Адаптивные стили для планшетов и ПК */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; /* Боковая панель и карта в ряд */
+            }
+            .sidebar {
+                width: 300px; /* Фиксированная ширина боковой панели */
+                border-right: 1px solid #ccc; /* Граница справа */
+                border-bottom: none; /* Убираем границу снизу */
+            }
+        }
     </style>
 </head>
 <body>
@@ -95,6 +117,11 @@
     <div class="container">
         <!-- Боковая панель -->
         <div class="sidebar">
+            <div class="toggle-buttons">
+                <button onclick="toggleMarkers('green')">Скейтпарки</button>
+                <button onclick="toggleMarkers('blue')">Стрит споты</button>
+                <button onclick="toggleMarkers('yellow')">Памп-треки</button>
+            </div>
             <h2>Скейтпарки</h2>
             <ul id="green-markers-list"></ul>
 
@@ -190,33 +217,54 @@
             { coords: [44.6104, 33.4880], title: "Балаклава 2", image: "https://example.com/balaklava.jpg", description: "Балаклава — живописный городок." }
         ];
 
+        // Хранение маркеров по цветам
+        const markers = {
+            blue: [],
+            green: [],
+            yellow: []
+        };
+
         // Функция для добавления маркеров на карту и в боковую панель
-        function addMarkers(markers, color, listId) {
+        function addMarkers(markersData, color, listId) {
             const list = document.getElementById(listId);
-            markers.forEach(marker => {
+            markersData.forEach(markerData => {
                 // Добавление маркера на карту
-                const leafletMarker = L.marker(marker.coords, {
+                const leafletMarker = L.marker(markerData.coords, {
                     icon: L.icon({
                         iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                        iconSize: [25, 41], // Уменьшенный размер
+                        iconSize: [12, 20], // Уменьшенный размер
                         iconAnchor: [12, 41]
                     })
                 })
                 .addTo(map)
                 .bindPopup(`
-                    <h2>${marker.title}</h2>
-                    <img src="${marker.image}" alt="${marker.title}" class="popup-image">
-                    <p>${marker.description}</p>
+                    <h2>${markerData.title}</h2>
+                    <img src="${markerData.image}" alt="${markerData.title}" class="popup-image">
+                    <p>${markerData.description}</p>
                 `);
+
+                // Добавление маркера в хранилище
+                markers[color].push(leafletMarker);
 
                 // Добавление элемента в боковую панель
                 const listItem = document.createElement('li');
-                listItem.textContent = marker.title;
+                listItem.textContent = markerData.title;
                 listItem.addEventListener('click', () => {
-                    map.setView(marker.coords, 13); // Центрирование карты на маркере
+                    map.setView(markerData.coords, 13); // Центрирование карты на маркере
                     leafletMarker.openPopup(); // Открытие всплывающего окна
                 });
                 list.appendChild(listItem);
+            });
+        }
+
+        // Функция для включения/выключения маркеров одного цвета
+        function toggleMarkers(color) {
+            markers[color].forEach(marker => {
+                if (map.hasLayer(marker)) {
+                    map.removeLayer(marker); // Убираем маркер с карты
+                } else {
+                    map.addLayer(marker); // Добавляем маркер на карту
+                }
             });
         }
 
@@ -227,7 +275,7 @@
         addMarkers(greenMarkers, 'green', 'green-markers-list');
 
         // Добавление желтых маркеров
-        addMarkers(yellowMarkers, 'gold', 'yellow-markers-list');
+        addMarkers(yellowMarkers, 'yellow', 'yellow-markers-list'); // Исправлено на 'yellow'
 
         // Автоматическое обновление размеров карты при изменении размера окна
         window.addEventListener('resize', () => {
