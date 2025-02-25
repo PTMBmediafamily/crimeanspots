@@ -5,25 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Карта на весь экран</title>
     <style>
+        /* Убираем отступы и задаем высоту и ширину для html и body */
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* Убираем скролл */
         }
+        /* iframe занимает 100% ширины и высоты экрана */
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            display: block; /* Убираем лишние отступы */
         }
     </style>
 </head>
 <body>
     <iframe
         src="https://www.google.com/maps/d/embed?mid=1aygrnHkJNUNfcvYqoJ4sX2B5dMtIAlA&ehbc=2E312F"
-        width="600"
-        height="450"
-        style="border:0;"
-        allowfullscreen=""
+        allowfullscreen
         loading="lazy">
     </iframe>
 </body>
